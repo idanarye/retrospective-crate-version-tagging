@@ -1,0 +1,13 @@
+[package]
+name = "retrospective-crate-version-tagging"
+version = "0.1.0"
+authors = ["Idan Arye <IdanArye@gmail.com>"]
+edition = "2021"
+license = "MIT OR Apache-2.0"
+description = ""
+repository = "https://github.com/idanarye/retrospective-crate-version-tagging.git"
+readme = "README.md"
+keywords = []
+categories = ["command-line-utilities", "development-tools"]
+
+[dependencies]
