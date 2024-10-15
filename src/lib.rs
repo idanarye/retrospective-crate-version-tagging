@@ -1,3 +1,4 @@
+pub mod detect;
 mod version_resolution;
 
 use flate2::read::GzDecoder;

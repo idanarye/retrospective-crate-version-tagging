@@ -1,16 +1,28 @@
 use clap::Parser;
-use retrospective_crate_version_tagging::CrateVersion;
+use retrospective_crate_version_tagging::detect::DetectMissingTags;
 
-#[derive(Parser)]
-#[command(version, about, long_about = None)]
-struct Cli {
-    #[arg(long)]
-    crate_name: String,
+#[derive(clap::Parser)]
+enum Cli {
+    Detect(DetectMissingTags),
 }
 
 fn main() {
-    let cli = Cli::parse();
-    let versions = CrateVersion::for_crate(&cli.crate_name).unwrap();
-    println!("{:?}", versions.iter().map(|v| v.name.clone()).collect::<Vec<_>>());
-    println!("{:?}", versions[0].resolve_commit_hash());
+    tracing::subscriber::set_global_default(
+        tracing_subscriber::fmt()
+            .with_writer(std::io::stderr)
+            .with_env_filter(
+                tracing_subscriber::EnvFilter::builder()
+                    .with_default_directive(tracing::Level::WARN.into())
+                    .from_env()
+                    .unwrap(),
+            )
+            .finish(),
+    )
+    .unwrap();
+    match Cli::parse() {
+        Cli::Detect(detect_missing_tags) => {
+            let result = detect_missing_tags.run().unwrap();
+            serde_json::to_writer_pretty(std::io::stdout().lock(), &result).unwrap();
+        }
+    }
 }
