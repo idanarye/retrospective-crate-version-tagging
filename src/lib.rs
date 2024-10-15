@@ -1,6 +1,10 @@
+mod version_resolution;
+
 use flate2::read::GzDecoder;
 use std::{ffi::OsString, io::Read};
 use tar::Archive;
+
+pub use version_resolution::CrateVersion;
 
 pub fn extract_commit_hash(input: impl Read) -> Result<Option<String>, std::io::Error> {
     let decoder = GzDecoder::new(input);
