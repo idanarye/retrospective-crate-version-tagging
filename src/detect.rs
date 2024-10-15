@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::CrateVersion;
 
 #[derive(clap::Args)]
-#[command(version, about, long_about = None)]
+#[command(about, long_about = None)]
 pub struct DetectMissingTags {
     #[arg(long)]
     crate_name: String,
@@ -58,7 +58,7 @@ impl DetectMissingTags {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct VersionToTag {
     pub version: String,
     pub tagname: String,
