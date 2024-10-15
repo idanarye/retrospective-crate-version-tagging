@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
@@ -13,16 +13,18 @@ pub struct DetectMissingTags {
     changelog_path: String,
     #[arg(long, default_value = "")]
     tag_prefix: String,
+    #[arg(long, action)]
+    include_existing: bool,
 }
 
 impl DetectMissingTags {
     pub fn run(&self) -> anyhow::Result<Vec<VersionToTag>> {
-        let crate_versions: HashMap<String, CrateVersion> =
-            CrateVersion::for_crate(&self.crate_name)?
-                .into_iter()
-                .map(|crate_version| (crate_version.name.clone(), crate_version))
-                .collect();
-        // println!("{:?}", crate_versions);
+        let existing_tags_to_skip = if !self.include_existing {
+            retrieve_all_tags()?
+        } else {
+            Default::default()
+        };
+        let mut crate_versions: Option<HashMap<String, CrateVersion>> = None;
 
         let mut versions_to_tag = Vec::new();
         for release in parse_changelog::parse_iter(&std::fs::read_to_string(&self.changelog_path)?)
@@ -30,7 +32,24 @@ impl DetectMissingTags {
             if release.version == "Unreleased" {
                 continue;
             }
-            let Some(crate_version) = crate_versions.get(release.version) else {
+            let tagname = format!("{}{}", self.tag_prefix, release.version);
+            if existing_tags_to_skip.contains(&tagname) {
+                continue;
+            }
+
+            if crate_versions.is_none() {
+                crate_versions = Some(
+                    CrateVersion::for_crate(&self.crate_name)?
+                        .into_iter()
+                        .map(|crate_version| (crate_version.name.clone(), crate_version))
+                        .collect(),
+                );
+            }
+
+            let Some(crate_version) = crate_versions
+                .as_ref()
+                .and_then(|crate_versions| crate_versions.get(release.version))
+            else {
                 tracing::warn!(
                     version = release.version,
                     "Cannot find a crates.io release for changelog entry"
@@ -46,14 +65,15 @@ impl DetectMissingTags {
             };
             versions_to_tag.push(VersionToTag {
                 version: release.version.to_owned(),
-                tagname: format!("{}{}", self.tag_prefix, release.version),
+                tagname,
                 commit_hash,
                 title: release.title.to_owned(),
                 notes: release.notes.to_owned(),
             });
         }
-        versions_to_tag
-            .sort_by_key(|version| Some(crate_versions.get(&version.version)?.created_at));
+        versions_to_tag.sort_by_key(|version| {
+            Some(crate_versions.as_ref()?.get(&version.version)?.created_at)
+        });
         Ok(versions_to_tag)
     }
 }
@@ -65,4 +85,13 @@ pub struct VersionToTag {
     pub commit_hash: String,
     pub title: String,
     pub notes: String,
+}
+
+fn retrieve_all_tags() -> anyhow::Result<HashSet<String>> {
+    let repo = gix::open(".")?;
+    let mut tag_names = HashSet::new();
+    for tag in repo.references()?.tags()? {
+        tag_names.insert(tag.unwrap().name().file_name().to_string());
+    }
+    Ok(tag_names)
 }

@@ -1,7 +1,10 @@
 use std::io::prelude::*;
 
 use clap::Parser;
-use retrospective_crate_version_tagging::{detect::{DetectMissingTags, VersionToTag}, upload_releases::UploadReleases};
+use retrospective_crate_version_tagging::{
+    detect::{DetectMissingTags, VersionToTag},
+    upload_releases::UploadReleases,
+};
 
 #[derive(clap::Parser)]
 enum Cli {
@@ -31,11 +34,14 @@ fn main() {
         }
         Cli::Upload(upload_releases) => {
             let deserializer = serde_json::Deserializer::from_reader(std::io::stdin().lock());
-            upload_releases.upload_versions_as_releases(
-                deserializer.into_iter::<Vec<VersionToTag>>()
-                .flat_map(|versions| versions.unwrap())
-                .collect()
-            ).unwrap();
+            upload_releases
+                .upload_versions_as_releases(
+                    deserializer
+                        .into_iter::<Vec<VersionToTag>>()
+                        .flat_map(|versions| versions.unwrap())
+                        .collect(),
+                )
+                .unwrap();
         }
     }
 }

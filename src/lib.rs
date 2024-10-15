@@ -1,6 +1,6 @@
 pub mod detect;
-mod version_resolution;
 pub mod upload_releases;
+mod version_resolution;
 
 use flate2::read::GzDecoder;
 use std::{ffi::OsString, io::Read};
