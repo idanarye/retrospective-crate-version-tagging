@@ -12,9 +12,9 @@ impl UploadReleases {
         &self,
         mut versions: Vec<VersionToTag>,
     ) -> anyhow::Result<()> {
-        versions.sort_by_key(|version| version.version.clone()); // TODO: sort by creation time
+        versions.sort_by_key(|version| version.created_at);
         for version in versions {
-            println!("{:?}", version.version);
+            println!("{:?}", version.tagname);
         }
         Ok(())
     }

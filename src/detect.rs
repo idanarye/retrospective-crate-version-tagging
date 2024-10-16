@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 use crate::CrateVersion;
@@ -67,6 +68,7 @@ impl DetectMissingTags {
                 version: release.version.to_owned(),
                 tagname,
                 commit_hash,
+                created_at: crate_version.created_at,
                 title: release.title.to_owned(),
                 notes: release.notes.to_owned(),
             });
@@ -83,6 +85,7 @@ pub struct VersionToTag {
     pub version: String,
     pub tagname: String,
     pub commit_hash: String,
+    pub created_at: DateTime<Utc>,
     pub title: String,
     pub notes: String,
 }
