@@ -12,7 +12,7 @@ pub struct DetectMissingTags {
     crate_name: String,
     #[arg(long)]
     changelog_path: String,
-    #[arg(long, default_value = "")]
+    #[arg(long)]
     tag_prefix: String,
     #[arg(long, action)]
     include_existing: bool,

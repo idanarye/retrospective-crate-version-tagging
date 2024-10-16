@@ -1,7 +1,6 @@
 use clap::Parser;
 use retrospective_crate_version_tagging::{
-    detect::DetectMissingTags,
-    upload_releases::UploadReleases,
+    detect::DetectMissingTags, upload_releases::UploadReleases,
 };
 
 #[derive(clap::Parser)]
@@ -29,9 +28,11 @@ fn main() {
             serde_yml::to_writer(std::io::stdout().lock(), &result).unwrap();
         }
         Cli::Upload(upload_releases) => {
-            upload_releases.upload_versions_as_releases(
-                serde_yml::from_reader(std::io::stdin().lock()).unwrap()
-            ).unwrap();
+            upload_releases
+                .upload_versions_as_releases(
+                    serde_yml::from_reader(std::io::stdin().lock()).unwrap(),
+                )
+                .unwrap();
         }
     }
 }
