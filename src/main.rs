@@ -26,7 +26,11 @@ fn main() {
     match Cli::parse() {
         Cli::Detect(detect_missing_tags) => {
             let result = detect_missing_tags.run().unwrap();
-            serde_yml::to_writer(std::io::stdout().lock(), &result).unwrap();
+            // Avoid printing empty values, because they get printed as `[]` which ruins the YAML
+            // concatanation
+            if !result.is_empty() {
+                serde_yml::to_writer(std::io::stdout().lock(), &result).unwrap();
+            }
         }
         Cli::Upload(upload_releases) => {
             upload_releases
