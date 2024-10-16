@@ -2,6 +2,8 @@ use clap::Parser;
 use retrospective_crate_version_tagging::{
     detect::DetectMissingTags, upload_releases::UploadReleases,
 };
+use tracing_indicatif::IndicatifLayer;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[derive(clap::Parser)]
 enum Cli {
@@ -10,18 +12,17 @@ enum Cli {
 }
 
 fn main() {
-    tracing::subscriber::set_global_default(
-        tracing_subscriber::fmt()
-            .with_writer(std::io::stderr)
-            .with_env_filter(
-                tracing_subscriber::EnvFilter::builder()
-                    .with_default_directive(tracing::Level::WARN.into())
-                    .from_env()
-                    .unwrap(),
-            )
-            .finish(),
-    )
-    .unwrap();
+    let indicatif_layer = IndicatifLayer::new();
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer().with_writer(indicatif_layer.get_stderr_writer()))
+        .with(
+            tracing_subscriber::EnvFilter::builder()
+                .with_default_directive(tracing::Level::WARN.into())
+                .from_env()
+                .unwrap(),
+        )
+        .with(indicatif_layer)
+        .init();
     match Cli::parse() {
         Cli::Detect(detect_missing_tags) => {
             let result = detect_missing_tags.run().unwrap();

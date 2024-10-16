@@ -17,11 +17,14 @@ clap = { version = "4.5.20", features = ["derive"] }
 crates_io_api = "^0.11"
 flate2 = "1.0.34"
 gix = "0.66.0"
+indicatif = "0.17.8"
 parse-changelog = { version = "^0.6", default-features = false }
 reqwest = { version = "^0.12", default-features = false, features = ["blocking"] }
+scopeguard = "1.2.0"
 serde = { version = "1.0.210", features = ["derive"] }
 serde_json = "^1"
 serde_yml = "0.0.12"
 tar = "^0.4"
 tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+tracing-indicatif = "0.3.6"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter", "registry"] }

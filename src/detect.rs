@@ -1,7 +1,9 @@
 use std::collections::{HashMap, HashSet};
 
 use chrono::{DateTime, Utc};
+use indicatif::ProgressStyle;
 use serde::{Deserialize, Serialize};
+use tracing_indicatif::span_ext::IndicatifSpanExt;
 
 use crate::CrateVersion;
 
@@ -25,11 +27,11 @@ impl DetectMissingTags {
         } else {
             Default::default()
         };
-        let mut crate_versions: Option<HashMap<String, CrateVersion>> = None;
 
-        let mut versions_to_tag = Vec::new();
-        for release in parse_changelog::parse_iter(&std::fs::read_to_string(&self.changelog_path)?)
-        {
+        let mut releases_to_check = Vec::new();
+
+        let changelog_text = std::fs::read_to_string(&self.changelog_path)?;
+        for release in parse_changelog::parse_iter(&changelog_text) {
             if release.version == "Unreleased" {
                 continue;
             }
@@ -37,20 +39,32 @@ impl DetectMissingTags {
             if existing_tags_to_skip.contains(&tagname) {
                 continue;
             }
+            releases_to_check.push((release, tagname));
+        }
 
-            if crate_versions.is_none() {
-                crate_versions = Some(
-                    CrateVersion::for_crate(&self.crate_name)?
-                        .into_iter()
-                        .map(|crate_version| (crate_version.name.clone(), crate_version))
-                        .collect(),
-                );
+        if releases_to_check.is_empty() {
+            return Ok(Vec::default());
+        }
+
+        let mut versions_to_tag = Vec::new();
+        let span = tracing::warn_span!("Fetching"); // use warn to show it by default
+        span.pb_set_style(&ProgressStyle::default_bar());
+        span.pb_set_length(releases_to_check.len() as u64 + 1);
+        let span_enter = span.enter();
+
+        let crate_versions: HashMap<String, CrateVersion> =
+            CrateVersion::for_crate(&self.crate_name)?
+                .into_iter()
+                .map(|crate_version| (crate_version.name.clone(), crate_version))
+                .collect();
+        span.pb_inc(1);
+
+        for (release, tagname) in releases_to_check {
+            scopeguard::defer! {
+                span.pb_inc(1);
             }
 
-            let Some(crate_version) = crate_versions
-                .as_ref()
-                .and_then(|crate_versions| crate_versions.get(release.version))
-            else {
+            let Some(crate_version) = crate_versions.get(release.version) else {
                 tracing::warn!(
                     version = release.version,
                     "Cannot find a crates.io release for changelog entry"
@@ -73,9 +87,9 @@ impl DetectMissingTags {
                 notes: release.notes.to_owned(),
             });
         }
-        versions_to_tag.sort_by_key(|version| {
-            Some(crate_versions.as_ref()?.get(&version.version)?.created_at)
-        });
+        drop(span_enter);
+        versions_to_tag
+            .sort_by_key(|version| Some(crate_versions.get(&version.version)?.created_at));
         Ok(versions_to_tag)
     }
 }
