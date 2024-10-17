@@ -1,11 +1,14 @@
 use std::collections::{HashMap, HashSet};
 
 use chrono::{DateTime, Utc};
+use crates_io_api::SyncClient;
+use flate2::read::GzDecoder;
 use indicatif::ProgressStyle;
+use reqwest::Url;
 use serde::{Deserialize, Serialize};
+use std::{ffi::OsString, io::Read};
+use tar::Archive;
 use tracing_indicatif::span_ext::IndicatifSpanExt;
-
-use crate::CrateVersion;
 
 /// Generate YAML with versions that don't have GitHub releases.
 #[derive(clap::Args)]
@@ -118,4 +121,61 @@ fn retrieve_all_tags() -> anyhow::Result<HashSet<String>> {
         tag_names.insert(tag.unwrap().name().file_name().to_string());
     }
     Ok(tag_names)
+}
+
+#[derive(Debug)]
+pub struct CrateVersion {
+    pub name: String,
+    pub created_at: DateTime<Utc>,
+    dl_url: Url,
+}
+
+impl CrateVersion {
+    pub fn for_crate(crate_name: &str) -> anyhow::Result<Vec<CrateVersion>> {
+        let client = SyncClient::new(
+            "bevy-tnua-physics-integration-layer (https://github.com/idanarye/retrospective-crate-version-tagging)",
+            std::time::Duration::from_millis(1000),
+        )?;
+        tracing::info!(crate = crate_name, "Getting crate information");
+        let crate_data = client.get_crate(crate_name)?;
+        let base_url =
+            Url::parse("https://crates.io/").expect("Statically defined URL should work");
+        crate_data
+            .versions
+            .into_iter()
+            .map(|version_data| {
+                Ok(CrateVersion {
+                    name: version_data.num,
+                    created_at: version_data.created_at,
+                    dl_url: base_url.join(&version_data.dl_path)?,
+                })
+            })
+            .collect()
+    }
+
+    pub fn resolve_commit_hash(&self) -> anyhow::Result<Option<String>> {
+        tracing::info!(version = self.name, "Resolving commit hash for version");
+        Ok(extract_commit_hash(reqwest::blocking::get(
+            self.dl_url.clone(),
+        )?)?)
+    }
+}
+
+pub fn extract_commit_hash(input: impl Read) -> Result<Option<String>, std::io::Error> {
+    let decoder = GzDecoder::new(input);
+    let mut a = Archive::new(decoder);
+
+    let desired_filename = OsString::from(".cargo_vcs_info.json");
+
+    for file in a.entries()? {
+        let entry = file?;
+        let path = entry.header().path()?;
+        if path.file_name() != Some(&desired_filename) {
+            continue;
+        }
+        // TODO: Use a proper struct instead of serde_json::Value
+        let value = serde_json::from_reader::<_, serde_json::Value>(entry)?;
+        return Ok(value["git"]["sha1"].as_str().map(|s| s.to_owned()));
+    }
+    Ok(None)
 }
