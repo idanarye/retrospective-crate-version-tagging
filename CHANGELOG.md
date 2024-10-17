@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## 0.1.1 - 2024-10-18
+### Changed
+- Enable LTO for release builds.
+
 ## 0.1.0 - 2024-10-17
 ### Added
 - A `detect` subcommand for generating a YAML with the unreleased version

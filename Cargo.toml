@@ -1,6 +1,6 @@
 [package]
 name = "retrospective-crate-version-tagging"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Idan Arye <IdanArye@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -28,3 +28,6 @@ tar = "^0.4"
 tracing = "0.1.40"
 tracing-indicatif = "0.3.6"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter", "registry"] }
+
+[profile.release]
+lto = true
