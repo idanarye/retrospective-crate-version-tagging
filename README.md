@@ -21,7 +21,7 @@ Workflows like like [release-please](https://github.com/googleapis/release-pleas
 Install from crates.io using:
 
 ```bash
-> cargo install retrospective-crate-version-tagging
+$ cargo install retrospective-crate-version-tagging
 ```
 
 ## Usage
