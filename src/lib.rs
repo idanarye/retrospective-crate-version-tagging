@@ -1,5 +1,5 @@
+pub mod create_releases;
 pub mod detect;
-pub mod upload_releases;
 mod version_resolution;
 
 use flate2::read::GzDecoder;

@@ -1,6 +1,6 @@
 use clap::Parser;
 use retrospective_crate_version_tagging::{
-    detect::DetectMissingTags, upload_releases::UploadReleases,
+    create_releases::CreateReleases, detect::DetectMissingTags,
 };
 use tracing_indicatif::IndicatifLayer;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
@@ -8,7 +8,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 #[derive(clap::Parser)]
 enum Cli {
     Detect(DetectMissingTags),
-    Upload(UploadReleases),
+    CreateReleases(CreateReleases),
 }
 
 fn main() {
@@ -32,9 +32,9 @@ fn main() {
                 serde_yml::to_writer(std::io::stdout().lock(), &result).unwrap();
             }
         }
-        Cli::Upload(upload_releases) => {
-            upload_releases
-                .upload_versions_as_releases(
+        Cli::CreateReleases(create_releases) => {
+            create_releases
+                .create_releases_from_versions(
                     serde_yml::from_reader(std::io::stdin().lock()).unwrap(),
                 )
                 .unwrap();
