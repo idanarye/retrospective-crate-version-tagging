@@ -16,6 +16,8 @@ pub struct DetectMissingTags {
     changelog_path: String,
     #[arg(long)]
     tag_prefix: String,
+    #[arg(long)]
+    title_prefix: Option<String>,
     #[arg(long, action)]
     include_existing: bool,
 }
@@ -83,7 +85,11 @@ impl DetectMissingTags {
                 tagname,
                 commit_hash,
                 created_at: crate_version.created_at,
-                title: release.title.to_owned(),
+                title: if let Some(title_prefix) = self.title_prefix.as_ref() {
+                    format!("{} {}", title_prefix, release.title)
+                } else {
+                    release.title.to_owned()
+                },
                 notes: release.notes.to_owned(),
             });
         }
