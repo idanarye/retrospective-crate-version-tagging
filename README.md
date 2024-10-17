@@ -1,5 +1,12 @@
 # Retrospective Crate Version Tagging
 
+## Requirements
+
+* [The GitHub CLI](https://github.com/cli/cli) (`gh`) must be installed and in the `PATH`.
+* The authentication token used by the GitHub CLI must have the `workflow` scope.
+  * To verify it has that scope, run `gh auth status` and look for `'workflow'` in the `Token scopes` list.
+  * If it's not there, run `gh auth refresh --scopes workflow` and follow the instructions.
+
 ## License
 
 Licensed under either of
