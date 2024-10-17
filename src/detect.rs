@@ -7,8 +7,8 @@ use tracing_indicatif::span_ext::IndicatifSpanExt;
 
 use crate::CrateVersion;
 
+/// Generate YAML with versions that don't have GitHub releases.
 #[derive(clap::Args)]
-#[command(about, long_about = None)]
 pub struct DetectMissingTags {
     #[arg(long)]
     crate_name: String,
@@ -19,6 +19,7 @@ pub struct DetectMissingTags {
     #[arg(long)]
     title_prefix: Option<String>,
     #[arg(long, action)]
+    /// Generate release entries in the YAML even for versions that already have a tag.
     include_existing: bool,
 }
 
